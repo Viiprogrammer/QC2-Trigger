@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "QCTrigger", "QCTrigger\QCTrigger.cproj", "{08046767-AB8C-49BF-9743-7F7A941B6E9D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AVR = Debug|AVR
+		Release|AVR = Release|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{08046767-AB8C-49BF-9743-7F7A941B6E9D}.Debug|AVR.ActiveCfg = Debug|AVR
+		{08046767-AB8C-49BF-9743-7F7A941B6E9D}.Debug|AVR.Build.0 = Debug|AVR
+		{08046767-AB8C-49BF-9743-7F7A941B6E9D}.Release|AVR.ActiveCfg = Release|AVR
+		{08046767-AB8C-49BF-9743-7F7A941B6E9D}.Release|AVR.Build.0 = Release|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
