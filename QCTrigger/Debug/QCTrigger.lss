@@ -3,29 +3,31 @@ QCTrigger.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         000003c0  00000000  00000000  00000094  2**1
+  0 .text         000003c2  00000000  00000000  00000094  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         0000000a  00800060  000003c0  00000454  2**0
+  1 .data         0000000a  00800060  000003c2  00000456  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .bss          00000005  0080006a  0080006a  0000045e  2**0
+  2 .bss          00000005  0080006a  0080006a  00000460  2**0
                   ALLOC
-  3 .comment      00000030  00000000  00000000  0000045e  2**0
+  3 .comment      00000030  00000000  00000000  00000460  2**0
                   CONTENTS, READONLY
-  4 .debug_aranges 00000090  00000000  00000000  0000048e  2**0
+  4 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000490  2**2
+                  CONTENTS, READONLY
+  5 .debug_aranges 00000098  00000000  00000000  000004cc  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .debug_info   00000880  00000000  00000000  0000051e  2**0
+  6 .debug_info   00000b87  00000000  00000000  00000564  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_abbrev 000002ae  00000000  00000000  00000d9e  2**0
+  7 .debug_abbrev 0000056d  00000000  00000000  000010eb  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_line   000002ff  00000000  00000000  0000104c  2**0
+  8 .debug_line   000005bc  00000000  00000000  00001658  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_frame  00000138  00000000  00000000  0000134c  2**2
+  9 .debug_frame  00000148  00000000  00000000  00001c14  2**2
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_str    00000247  00000000  00000000  00001484  2**0
+ 10 .debug_str    00000364  00000000  00000000  00001d5c  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_loc    00000400  00000000  00000000  000016cb  2**0
+ 11 .debug_loc    0000048f  00000000  00000000  000020c0  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_ranges 00000070  00000000  00000000  00001acb  2**0
+ 12 .debug_ranges 00000078  00000000  00000000  0000254f  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -34,7 +36,7 @@ Disassembly of section .text:
    0:	09 c0       	rjmp	.+18     	; 0x14 <__ctors_end>
    2:	21 c0       	rjmp	.+66     	; 0x46 <__bad_interrupt>
    4:	20 c0       	rjmp	.+64     	; 0x46 <__bad_interrupt>
-   6:	f4 c0       	rjmp	.+488    	; 0x1f0 <__vector_3>
+   6:	f3 c0       	rjmp	.+486    	; 0x1ee <__vector_3>
    8:	1e c0       	rjmp	.+60     	; 0x46 <__bad_interrupt>
    a:	1d c0       	rjmp	.+58     	; 0x46 <__bad_interrupt>
    c:	1c c0       	rjmp	.+56     	; 0x46 <__bad_interrupt>
@@ -52,7 +54,7 @@ Disassembly of section .text:
   1c:	10 e0       	ldi	r17, 0x00	; 0
   1e:	a0 e6       	ldi	r26, 0x60	; 96
   20:	b0 e0       	ldi	r27, 0x00	; 0
-  22:	e0 ec       	ldi	r30, 0xC0	; 192
+  22:	e2 ec       	ldi	r30, 0xC2	; 194
   24:	f3 e0       	ldi	r31, 0x03	; 3
   26:	02 c0       	rjmp	.+4      	; 0x2c <__do_copy_data+0x10>
   28:	05 90       	lpm	r0, Z+
@@ -74,16 +76,17 @@ Disassembly of section .text:
   3c:	af 36       	cpi	r26, 0x6F	; 111
   3e:	b2 07       	cpc	r27, r18
   40:	e1 f7       	brne	.-8      	; 0x3a <.do_clear_bss_loop>
-  42:	3a d1       	rcall	.+628    	; 0x2b8 <main>
-  44:	bb c1       	rjmp	.+886    	; 0x3bc <_exit>
+  42:	3b d1       	rcall	.+630    	; 0x2ba <main>
+  44:	bc c1       	rjmp	.+888    	; 0x3be <_exit>
 
 00000046 <__bad_interrupt>:
   46:	dc cf       	rjmp	.-72     	; 0x0 <__vectors>
 
 00000048 <ShiftRegisterInit>:
-#include "74hc595.h"
-#define N_ELEMENTS(X) (sizeof(X)/sizeof(*(X)))
-char ShiftPORT[] = {0b00000000, 0b00000000};
+
+/* 
+  Init SPI and I/O pins
+*/
 void ShiftRegisterInit(){
   	DATA_DDR |= (1<<DATA);
   48:	b9 9a       	sbi	0x17, 1	; 23
@@ -100,383 +103,401 @@ void ShiftRegisterInit(){
   52:	c2 98       	cbi	0x18, 2	; 24
   54:	08 95       	ret
 
-00000056 <ShiftRegisterSend>:
-	#ifdef USE_HARDWARE_SPI
-	 SPCR = ((1<<SPE)|(1<<MSTR));//Р’РєР»СЋС‡РµРЅРёРµ, СЂРµР¶РёРј MASTER
+00000056 <strobLatch>:
 	#endif
 }
+
+
+void strobLatch(){
+	LATCH_PORT |= (1 << LATCH);
+  56:	c2 9a       	sbi	0x18, 2	; 24
+	LATCH_PORT &=~ (1 << LATCH);
+  58:	c2 98       	cbi	0x18, 2	; 24
+  5a:	08 95       	ret
+
+0000005c <ShiftRegisterSend>:
+}
+/*
+  Send data to Shift register
+*/
 void ShiftRegisterSend(){
-  56:	ea e6       	ldi	r30, 0x6A	; 106
-  58:	f0 e0       	ldi	r31, 0x00	; 0
-  5a:	2c e6       	ldi	r18, 0x6C	; 108
-  5c:	30 e0       	ldi	r19, 0x00	; 0
-		while(!(SPSR & (1<<SPIF)));
-	}
-	#endif
-	#ifndef USE_HARDWARE_SPI
-	for(unsigned int i = 0; i < sizeof(ShiftPORT); i++){
-		unsigned char data = ShiftPORT[i];
-  5e:	68 e0       	ldi	r22, 0x08	; 8
-  60:	50 e0       	ldi	r21, 0x00	; 0
-  62:	41 91       	ld	r20, Z+
-  64:	86 2f       	mov	r24, r22
-  66:	95 2f       	mov	r25, r21
-		for(unsigned int i = 0; i < 8; i++){
+  5c:	ea e6       	ldi	r30, 0x6A	; 106
+  5e:	f0 e0       	ldi	r31, 0x00	; 0
+  60:	4c e6       	ldi	r20, 0x6C	; 108
+  62:	50 e0       	ldi	r21, 0x00	; 0
+	  for(unsigned int byte = sizeof(ShiftPORT); byte > 0; byte--){
+	#else
+	  for(unsigned int byte = 1; byte <= sizeof(ShiftPORT); byte++){
+	#endif  
+	
+		unsigned char data = ShiftPORT[byte-1];
+  64:	21 91       	ld	r18, Z+
+  66:	88 e0       	ldi	r24, 0x08	; 8
+  68:	90 e0       	ldi	r25, 0x00	; 0
+		for(unsigned int bit = 0; bit < 8; bit++){
 			if(data & 0x80){
-  68:	44 23       	and	r20, r20
-  6a:	14 f4       	brge	.+4      	; 0x70 <ShiftRegisterSend+0x1a>
+  6a:	22 23       	and	r18, r18
+  6c:	14 f4       	brge	.+4      	; 0x72 <ShiftRegisterSend+0x16>
 				DATA_PORT |= (1 << DATA);
-  6c:	c1 9a       	sbi	0x18, 1	; 24
-  6e:	01 c0       	rjmp	.+2      	; 0x72 <ShiftRegisterSend+0x1c>
+  6e:	c1 9a       	sbi	0x18, 1	; 24
+  70:	01 c0       	rjmp	.+2      	; 0x74 <ShiftRegisterSend+0x18>
 			}else{
 				DATA_PORT &=~ (1 << DATA);
-  70:	c1 98       	cbi	0x18, 1	; 24
+  72:	c1 98       	cbi	0x18, 1	; 24
 			}
 			SCK_PORT |= (1 << SCK);
-  72:	c0 9a       	sbi	0x18, 0	; 24
+  74:	c0 9a       	sbi	0x18, 0	; 24
 			SCK_PORT &=~ (1 << SCK);
-  74:	c0 98       	cbi	0x18, 0	; 24
+  76:	c0 98       	cbi	0x18, 0	; 24
 			data <<= 1;
-  76:	44 0f       	add	r20, r20
-  78:	01 97       	sbiw	r24, 0x01	; 1
-	}
-	#endif
-	#ifndef USE_HARDWARE_SPI
-	for(unsigned int i = 0; i < sizeof(ShiftPORT); i++){
-		unsigned char data = ShiftPORT[i];
-		for(unsigned int i = 0; i < 8; i++){
-  7a:	00 97       	sbiw	r24, 0x00	; 0
-  7c:	a9 f7       	brne	.-22     	; 0x68 <ShiftRegisterSend+0x12>
-		SPDR = ShiftPORT[i];
-		while(!(SPSR & (1<<SPIF)));
-	}
-	#endif
-	#ifndef USE_HARDWARE_SPI
-	for(unsigned int i = 0; i < sizeof(ShiftPORT); i++){
-  7e:	e2 17       	cp	r30, r18
-  80:	f3 07       	cpc	r31, r19
-  82:	79 f7       	brne	.-34     	; 0x62 <ShiftRegisterSend+0xc>
+  78:	22 0f       	add	r18, r18
+  7a:	01 97       	sbiw	r24, 0x01	; 1
+	#else
+	  for(unsigned int byte = 1; byte <= sizeof(ShiftPORT); byte++){
+	#endif  
+	
+		unsigned char data = ShiftPORT[byte-1];
+		for(unsigned int bit = 0; bit < 8; bit++){
+  7c:	b1 f7       	brne	.-20     	; 0x6a <ShiftRegisterSend+0xe>
+	#else
+	
+	#if (BYTE_ORDER == 1) 
+	  for(unsigned int byte = sizeof(ShiftPORT); byte > 0; byte--){
+	#else
+	  for(unsigned int byte = 1; byte <= sizeof(ShiftPORT); byte++){
+  7e:	e4 17       	cp	r30, r20
+  80:	f5 07       	cpc	r31, r21
+  82:	81 f7       	brne	.-32     	; 0x64 <ShiftRegisterSend+0x8>
 			SCK_PORT &=~ (1 << SCK);
 			data <<= 1;
 		}
 	}
 	#endif   
-	LATCH_PORT |= (1 << LATCH);
-  84:	c2 9a       	sbi	0x18, 2	; 24
-	LATCH_PORT &=~ (1 << LATCH);
-  86:	c2 98       	cbi	0x18, 2	; 24
-  88:	08 95       	ret
-
-0000008a <ShiftDigitalWrite>:
 }
+  84:	08 95       	ret
+
+00000086 <ShiftDigitalWrite>:
+  Use example:
+    ShiftDigitalWrite(4, HIGH, 2);
+    This example set pin 4 of в„–3 shift regisner to HIGH level (numbering from 0)
+*/
 void ShiftDigitalWrite(int pin, int lvl, int number){
   if(lvl){
-  8a:	67 2b       	or	r22, r23
-  8c:	81 f0       	breq	.+32     	; 0xae <__stack+0xf>
+  86:	67 2b       	or	r22, r23
+  88:	81 f0       	breq	.+32     	; 0xaa <__stack+0xb>
     ShiftPORT[number] |= (1 << pin);
-  8e:	fa 01       	movw	r30, r20
-  90:	e6 59       	subi	r30, 0x96	; 150
-  92:	ff 4f       	sbci	r31, 0xFF	; 255
-  94:	21 e0       	ldi	r18, 0x01	; 1
-  96:	30 e0       	ldi	r19, 0x00	; 0
-  98:	a9 01       	movw	r20, r18
-  9a:	02 c0       	rjmp	.+4      	; 0xa0 <__stack+0x1>
-  9c:	44 0f       	add	r20, r20
-  9e:	55 1f       	adc	r21, r21
-  a0:	8a 95       	dec	r24
-  a2:	e2 f7       	brpl	.-8      	; 0x9c <ShiftDigitalWrite+0x12>
-  a4:	ca 01       	movw	r24, r20
-  a6:	90 81       	ld	r25, Z
-  a8:	89 2b       	or	r24, r25
-  aa:	80 83       	st	Z, r24
-  ac:	10 c0       	rjmp	.+32     	; 0xce <__stack+0x2f>
+  8a:	fa 01       	movw	r30, r20
+  8c:	e6 59       	subi	r30, 0x96	; 150
+  8e:	ff 4f       	sbci	r31, 0xFF	; 255
+  90:	21 e0       	ldi	r18, 0x01	; 1
+  92:	30 e0       	ldi	r19, 0x00	; 0
+  94:	a9 01       	movw	r20, r18
+  96:	02 c0       	rjmp	.+4      	; 0x9c <ShiftDigitalWrite+0x16>
+  98:	44 0f       	add	r20, r20
+  9a:	55 1f       	adc	r21, r21
+  9c:	8a 95       	dec	r24
+  9e:	e2 f7       	brpl	.-8      	; 0x98 <ShiftDigitalWrite+0x12>
+  a0:	ca 01       	movw	r24, r20
+  a2:	90 81       	ld	r25, Z
+  a4:	89 2b       	or	r24, r25
+  a6:	80 83       	st	Z, r24
+  a8:	10 c0       	rjmp	.+32     	; 0xca <__stack+0x2b>
   }else{
 	ShiftPORT[number] &= ~(1 << pin);
-  ae:	fa 01       	movw	r30, r20
-  b0:	e6 59       	subi	r30, 0x96	; 150
-  b2:	ff 4f       	sbci	r31, 0xFF	; 255
-  b4:	21 e0       	ldi	r18, 0x01	; 1
-  b6:	30 e0       	ldi	r19, 0x00	; 0
-  b8:	a9 01       	movw	r20, r18
-  ba:	02 c0       	rjmp	.+4      	; 0xc0 <__stack+0x21>
-  bc:	44 0f       	add	r20, r20
-  be:	55 1f       	adc	r21, r21
-  c0:	8a 95       	dec	r24
-  c2:	e2 f7       	brpl	.-8      	; 0xbc <__stack+0x1d>
-  c4:	ca 01       	movw	r24, r20
-  c6:	80 95       	com	r24
-  c8:	90 81       	ld	r25, Z
-  ca:	89 23       	and	r24, r25
-  cc:	80 83       	st	Z, r24
+  aa:	fa 01       	movw	r30, r20
+  ac:	e6 59       	subi	r30, 0x96	; 150
+  ae:	ff 4f       	sbci	r31, 0xFF	; 255
+  b0:	21 e0       	ldi	r18, 0x01	; 1
+  b2:	30 e0       	ldi	r19, 0x00	; 0
+  b4:	a9 01       	movw	r20, r18
+  b6:	02 c0       	rjmp	.+4      	; 0xbc <__stack+0x1d>
+  b8:	44 0f       	add	r20, r20
+  ba:	55 1f       	adc	r21, r21
+  bc:	8a 95       	dec	r24
+  be:	e2 f7       	brpl	.-8      	; 0xb8 <__stack+0x19>
+  c0:	ca 01       	movw	r24, r20
+  c2:	80 95       	com	r24
+  c4:	90 81       	ld	r25, Z
+  c6:	89 23       	and	r24, r25
+  c8:	80 83       	st	Z, r24
   }
   ShiftRegisterSend();
-  ce:	c3 df       	rcall	.-122    	; 0x56 <ShiftRegisterSend>
-  d0:	08 95       	ret
+  ca:	c8 df       	rcall	.-112    	; 0x5c <ShiftRegisterSend>
+  cc:	08 95       	ret
 
-000000d2 <ShiftDigitalWritePort>:
-}
+000000ce <ShiftDigitalWritePort>:
+   Use example: 
+   ShiftDigitalWritePort(0xFF, 1);
+   This example set all pins of в„–2 shuft register to HIGH level (numbering from 0)
+*/
 void ShiftDigitalWritePort(int port, int number){
     ShiftPORT[number] = port;
-  d2:	fb 01       	movw	r30, r22
-  d4:	e6 59       	subi	r30, 0x96	; 150
-  d6:	ff 4f       	sbci	r31, 0xFF	; 255
-  d8:	80 83       	st	Z, r24
+  ce:	fb 01       	movw	r30, r22
+  d0:	e6 59       	subi	r30, 0x96	; 150
+  d2:	ff 4f       	sbci	r31, 0xFF	; 255
+  d4:	80 83       	st	Z, r24
 	ShiftRegisterSend();
-  da:	bd df       	rcall	.-134    	; 0x56 <ShiftRegisterSend>
-  dc:	08 95       	ret
+  d6:	c2 df       	rcall	.-124    	; 0x5c <ShiftRegisterSend>
+  d8:	08 95       	ret
 
-000000de <pinSetMode>:
+000000da <pinSetMode>:
  1 - 3.3
  2 - 0.6
  3 - gnd
 */
 void pinSetMode(unsigned char pin, unsigned char mode){
 	cli();
-  de:	f8 94       	cli
+  da:	f8 94       	cli
 	if(pin == D_PLUS){
-  e0:	81 11       	cpse	r24, r1
-  e2:	34 c0       	rjmp	.+104    	; 0x14c <pinSetMode+0x6e>
+  dc:	81 11       	cpse	r24, r1
+  de:	34 c0       	rjmp	.+104    	; 0x148 <pinSetMode+0x6e>
 	   if(mode == V_THREE){
-  e4:	61 30       	cpi	r22, 0x01	; 1
-  e6:	79 f4       	brne	.+30     	; 0x106 <pinSetMode+0x28>
+  e0:	61 30       	cpi	r22, 0x01	; 1
+  e2:	79 f4       	brne	.+30     	; 0x102 <pinSetMode+0x28>
 		   ShiftDigitalWrite(0, HIGH, 1);
-  e8:	41 e0       	ldi	r20, 0x01	; 1
-  ea:	50 e0       	ldi	r21, 0x00	; 0
-  ec:	61 e0       	ldi	r22, 0x01	; 1
-  ee:	70 e0       	ldi	r23, 0x00	; 0
-  f0:	80 e0       	ldi	r24, 0x00	; 0
-  f2:	90 e0       	ldi	r25, 0x00	; 0
-  f4:	ca df       	rcall	.-108    	; 0x8a <ShiftDigitalWrite>
+  e4:	41 e0       	ldi	r20, 0x01	; 1
+  e6:	50 e0       	ldi	r21, 0x00	; 0
+  e8:	61 e0       	ldi	r22, 0x01	; 1
+  ea:	70 e0       	ldi	r23, 0x00	; 0
+  ec:	80 e0       	ldi	r24, 0x00	; 0
+  ee:	90 e0       	ldi	r25, 0x00	; 0
+  f0:	ca df       	rcall	.-108    	; 0x86 <ShiftDigitalWrite>
 		   ShiftDigitalWrite(1, HIGH, 1);
-  f6:	41 e0       	ldi	r20, 0x01	; 1
-  f8:	50 e0       	ldi	r21, 0x00	; 0
-  fa:	61 e0       	ldi	r22, 0x01	; 1
-  fc:	70 e0       	ldi	r23, 0x00	; 0
-  fe:	81 e0       	ldi	r24, 0x01	; 1
- 100:	90 e0       	ldi	r25, 0x00	; 0
- 102:	c3 df       	rcall	.-122    	; 0x8a <ShiftDigitalWrite>
- 104:	57 c0       	rjmp	.+174    	; 0x1b4 <pinSetMode+0xd6>
+  f2:	41 e0       	ldi	r20, 0x01	; 1
+  f4:	50 e0       	ldi	r21, 0x00	; 0
+  f6:	61 e0       	ldi	r22, 0x01	; 1
+  f8:	70 e0       	ldi	r23, 0x00	; 0
+  fa:	81 e0       	ldi	r24, 0x01	; 1
+  fc:	90 e0       	ldi	r25, 0x00	; 0
+  fe:	c3 df       	rcall	.-122    	; 0x86 <ShiftDigitalWrite>
+ 100:	57 c0       	rjmp	.+174    	; 0x1b0 <pinSetMode+0xd6>
 	   }else if (mode == V_ZERO){
- 106:	63 30       	cpi	r22, 0x03	; 3
- 108:	79 f4       	brne	.+30     	; 0x128 <pinSetMode+0x4a>
+ 102:	63 30       	cpi	r22, 0x03	; 3
+ 104:	79 f4       	brne	.+30     	; 0x124 <pinSetMode+0x4a>
 		   ShiftDigitalWrite(0, LOW, 1);
- 10a:	41 e0       	ldi	r20, 0x01	; 1
- 10c:	50 e0       	ldi	r21, 0x00	; 0
- 10e:	60 e0       	ldi	r22, 0x00	; 0
- 110:	70 e0       	ldi	r23, 0x00	; 0
- 112:	80 e0       	ldi	r24, 0x00	; 0
- 114:	90 e0       	ldi	r25, 0x00	; 0
- 116:	b9 df       	rcall	.-142    	; 0x8a <ShiftDigitalWrite>
+ 106:	41 e0       	ldi	r20, 0x01	; 1
+ 108:	50 e0       	ldi	r21, 0x00	; 0
+ 10a:	60 e0       	ldi	r22, 0x00	; 0
+ 10c:	70 e0       	ldi	r23, 0x00	; 0
+ 10e:	80 e0       	ldi	r24, 0x00	; 0
+ 110:	90 e0       	ldi	r25, 0x00	; 0
+ 112:	b9 df       	rcall	.-142    	; 0x86 <ShiftDigitalWrite>
 		   ShiftDigitalWrite(1, LOW, 1);
- 118:	41 e0       	ldi	r20, 0x01	; 1
- 11a:	50 e0       	ldi	r21, 0x00	; 0
- 11c:	60 e0       	ldi	r22, 0x00	; 0
- 11e:	70 e0       	ldi	r23, 0x00	; 0
- 120:	81 e0       	ldi	r24, 0x01	; 1
- 122:	90 e0       	ldi	r25, 0x00	; 0
- 124:	b2 df       	rcall	.-156    	; 0x8a <ShiftDigitalWrite>
- 126:	46 c0       	rjmp	.+140    	; 0x1b4 <pinSetMode+0xd6>
+ 114:	41 e0       	ldi	r20, 0x01	; 1
+ 116:	50 e0       	ldi	r21, 0x00	; 0
+ 118:	60 e0       	ldi	r22, 0x00	; 0
+ 11a:	70 e0       	ldi	r23, 0x00	; 0
+ 11c:	81 e0       	ldi	r24, 0x01	; 1
+ 11e:	90 e0       	ldi	r25, 0x00	; 0
+ 120:	b2 df       	rcall	.-156    	; 0x86 <ShiftDigitalWrite>
+ 122:	46 c0       	rjmp	.+140    	; 0x1b0 <pinSetMode+0xd6>
 	   }else if (mode == V_ZERO_SIX){
- 128:	62 30       	cpi	r22, 0x02	; 2
- 12a:	09 f0       	breq	.+2      	; 0x12e <pinSetMode+0x50>
- 12c:	43 c0       	rjmp	.+134    	; 0x1b4 <pinSetMode+0xd6>
+ 124:	62 30       	cpi	r22, 0x02	; 2
+ 126:	09 f0       	breq	.+2      	; 0x12a <pinSetMode+0x50>
+ 128:	43 c0       	rjmp	.+134    	; 0x1b0 <pinSetMode+0xd6>
 	       ShiftDigitalWrite(0, LOW, 1);
- 12e:	41 e0       	ldi	r20, 0x01	; 1
- 130:	50 e0       	ldi	r21, 0x00	; 0
- 132:	60 e0       	ldi	r22, 0x00	; 0
- 134:	70 e0       	ldi	r23, 0x00	; 0
- 136:	80 e0       	ldi	r24, 0x00	; 0
- 138:	90 e0       	ldi	r25, 0x00	; 0
- 13a:	a7 df       	rcall	.-178    	; 0x8a <ShiftDigitalWrite>
+ 12a:	41 e0       	ldi	r20, 0x01	; 1
+ 12c:	50 e0       	ldi	r21, 0x00	; 0
+ 12e:	60 e0       	ldi	r22, 0x00	; 0
+ 130:	70 e0       	ldi	r23, 0x00	; 0
+ 132:	80 e0       	ldi	r24, 0x00	; 0
+ 134:	90 e0       	ldi	r25, 0x00	; 0
+ 136:	a7 df       	rcall	.-178    	; 0x86 <ShiftDigitalWrite>
 	       ShiftDigitalWrite(1, HIGH, 1);
- 13c:	41 e0       	ldi	r20, 0x01	; 1
- 13e:	50 e0       	ldi	r21, 0x00	; 0
- 140:	61 e0       	ldi	r22, 0x01	; 1
- 142:	70 e0       	ldi	r23, 0x00	; 0
- 144:	81 e0       	ldi	r24, 0x01	; 1
- 146:	90 e0       	ldi	r25, 0x00	; 0
- 148:	a0 df       	rcall	.-192    	; 0x8a <ShiftDigitalWrite>
- 14a:	34 c0       	rjmp	.+104    	; 0x1b4 <pinSetMode+0xd6>
+ 138:	41 e0       	ldi	r20, 0x01	; 1
+ 13a:	50 e0       	ldi	r21, 0x00	; 0
+ 13c:	61 e0       	ldi	r22, 0x01	; 1
+ 13e:	70 e0       	ldi	r23, 0x00	; 0
+ 140:	81 e0       	ldi	r24, 0x01	; 1
+ 142:	90 e0       	ldi	r25, 0x00	; 0
+ 144:	a0 df       	rcall	.-192    	; 0x86 <ShiftDigitalWrite>
+ 146:	34 c0       	rjmp	.+104    	; 0x1b0 <pinSetMode+0xd6>
        }
+	   
 	}else if(pin == D_MINUS){
- 14c:	81 30       	cpi	r24, 0x01	; 1
- 14e:	91 f5       	brne	.+100    	; 0x1b4 <pinSetMode+0xd6>
+ 148:	81 30       	cpi	r24, 0x01	; 1
+ 14a:	91 f5       	brne	.+100    	; 0x1b0 <pinSetMode+0xd6>
 	   if(mode == V_THREE){
- 150:	61 30       	cpi	r22, 0x01	; 1
- 152:	79 f4       	brne	.+30     	; 0x172 <pinSetMode+0x94>
+ 14c:	61 30       	cpi	r22, 0x01	; 1
+ 14e:	79 f4       	brne	.+30     	; 0x16e <pinSetMode+0x94>
 		   ShiftDigitalWrite(2, HIGH, 1);
- 154:	41 e0       	ldi	r20, 0x01	; 1
- 156:	50 e0       	ldi	r21, 0x00	; 0
- 158:	61 e0       	ldi	r22, 0x01	; 1
- 15a:	70 e0       	ldi	r23, 0x00	; 0
- 15c:	82 e0       	ldi	r24, 0x02	; 2
- 15e:	90 e0       	ldi	r25, 0x00	; 0
- 160:	94 df       	rcall	.-216    	; 0x8a <ShiftDigitalWrite>
+ 150:	41 e0       	ldi	r20, 0x01	; 1
+ 152:	50 e0       	ldi	r21, 0x00	; 0
+ 154:	61 e0       	ldi	r22, 0x01	; 1
+ 156:	70 e0       	ldi	r23, 0x00	; 0
+ 158:	82 e0       	ldi	r24, 0x02	; 2
+ 15a:	90 e0       	ldi	r25, 0x00	; 0
+ 15c:	94 df       	rcall	.-216    	; 0x86 <ShiftDigitalWrite>
 		   ShiftDigitalWrite(3, HIGH, 1);
- 162:	41 e0       	ldi	r20, 0x01	; 1
- 164:	50 e0       	ldi	r21, 0x00	; 0
- 166:	61 e0       	ldi	r22, 0x01	; 1
- 168:	70 e0       	ldi	r23, 0x00	; 0
- 16a:	83 e0       	ldi	r24, 0x03	; 3
- 16c:	90 e0       	ldi	r25, 0x00	; 0
- 16e:	8d df       	rcall	.-230    	; 0x8a <ShiftDigitalWrite>
- 170:	21 c0       	rjmp	.+66     	; 0x1b4 <pinSetMode+0xd6>
+ 15e:	41 e0       	ldi	r20, 0x01	; 1
+ 160:	50 e0       	ldi	r21, 0x00	; 0
+ 162:	61 e0       	ldi	r22, 0x01	; 1
+ 164:	70 e0       	ldi	r23, 0x00	; 0
+ 166:	83 e0       	ldi	r24, 0x03	; 3
+ 168:	90 e0       	ldi	r25, 0x00	; 0
+ 16a:	8d df       	rcall	.-230    	; 0x86 <ShiftDigitalWrite>
+ 16c:	21 c0       	rjmp	.+66     	; 0x1b0 <pinSetMode+0xd6>
 	   }else if (mode == V_ZERO){
- 172:	63 30       	cpi	r22, 0x03	; 3
- 174:	79 f4       	brne	.+30     	; 0x194 <pinSetMode+0xb6>
+ 16e:	63 30       	cpi	r22, 0x03	; 3
+ 170:	79 f4       	brne	.+30     	; 0x190 <pinSetMode+0xb6>
 		   ShiftDigitalWrite(2, LOW, 1);
- 176:	41 e0       	ldi	r20, 0x01	; 1
- 178:	50 e0       	ldi	r21, 0x00	; 0
- 17a:	60 e0       	ldi	r22, 0x00	; 0
- 17c:	70 e0       	ldi	r23, 0x00	; 0
- 17e:	82 e0       	ldi	r24, 0x02	; 2
- 180:	90 e0       	ldi	r25, 0x00	; 0
- 182:	83 df       	rcall	.-250    	; 0x8a <ShiftDigitalWrite>
+ 172:	41 e0       	ldi	r20, 0x01	; 1
+ 174:	50 e0       	ldi	r21, 0x00	; 0
+ 176:	60 e0       	ldi	r22, 0x00	; 0
+ 178:	70 e0       	ldi	r23, 0x00	; 0
+ 17a:	82 e0       	ldi	r24, 0x02	; 2
+ 17c:	90 e0       	ldi	r25, 0x00	; 0
+ 17e:	83 df       	rcall	.-250    	; 0x86 <ShiftDigitalWrite>
 		   ShiftDigitalWrite(3, LOW, 1);
- 184:	41 e0       	ldi	r20, 0x01	; 1
- 186:	50 e0       	ldi	r21, 0x00	; 0
- 188:	60 e0       	ldi	r22, 0x00	; 0
- 18a:	70 e0       	ldi	r23, 0x00	; 0
- 18c:	83 e0       	ldi	r24, 0x03	; 3
- 18e:	90 e0       	ldi	r25, 0x00	; 0
- 190:	7c df       	rcall	.-264    	; 0x8a <ShiftDigitalWrite>
- 192:	10 c0       	rjmp	.+32     	; 0x1b4 <pinSetMode+0xd6>
+ 180:	41 e0       	ldi	r20, 0x01	; 1
+ 182:	50 e0       	ldi	r21, 0x00	; 0
+ 184:	60 e0       	ldi	r22, 0x00	; 0
+ 186:	70 e0       	ldi	r23, 0x00	; 0
+ 188:	83 e0       	ldi	r24, 0x03	; 3
+ 18a:	90 e0       	ldi	r25, 0x00	; 0
+ 18c:	7c df       	rcall	.-264    	; 0x86 <ShiftDigitalWrite>
+ 18e:	10 c0       	rjmp	.+32     	; 0x1b0 <pinSetMode+0xd6>
 	   }else if (mode == V_ZERO_SIX){
- 194:	62 30       	cpi	r22, 0x02	; 2
- 196:	71 f4       	brne	.+28     	; 0x1b4 <pinSetMode+0xd6>
+ 190:	62 30       	cpi	r22, 0x02	; 2
+ 192:	71 f4       	brne	.+28     	; 0x1b0 <pinSetMode+0xd6>
 		   ShiftDigitalWrite(2, LOW, 1);
- 198:	41 e0       	ldi	r20, 0x01	; 1
- 19a:	50 e0       	ldi	r21, 0x00	; 0
- 19c:	60 e0       	ldi	r22, 0x00	; 0
- 19e:	70 e0       	ldi	r23, 0x00	; 0
- 1a0:	82 e0       	ldi	r24, 0x02	; 2
- 1a2:	90 e0       	ldi	r25, 0x00	; 0
- 1a4:	72 df       	rcall	.-284    	; 0x8a <ShiftDigitalWrite>
+ 194:	41 e0       	ldi	r20, 0x01	; 1
+ 196:	50 e0       	ldi	r21, 0x00	; 0
+ 198:	60 e0       	ldi	r22, 0x00	; 0
+ 19a:	70 e0       	ldi	r23, 0x00	; 0
+ 19c:	82 e0       	ldi	r24, 0x02	; 2
+ 19e:	90 e0       	ldi	r25, 0x00	; 0
+ 1a0:	72 df       	rcall	.-284    	; 0x86 <ShiftDigitalWrite>
 		   ShiftDigitalWrite(3, HIGH, 1);
- 1a6:	41 e0       	ldi	r20, 0x01	; 1
- 1a8:	50 e0       	ldi	r21, 0x00	; 0
- 1aa:	61 e0       	ldi	r22, 0x01	; 1
- 1ac:	70 e0       	ldi	r23, 0x00	; 0
- 1ae:	83 e0       	ldi	r24, 0x03	; 3
- 1b0:	90 e0       	ldi	r25, 0x00	; 0
- 1b2:	6b df       	rcall	.-298    	; 0x8a <ShiftDigitalWrite>
+ 1a2:	41 e0       	ldi	r20, 0x01	; 1
+ 1a4:	50 e0       	ldi	r21, 0x00	; 0
+ 1a6:	61 e0       	ldi	r22, 0x01	; 1
+ 1a8:	70 e0       	ldi	r23, 0x00	; 0
+ 1aa:	83 e0       	ldi	r24, 0x03	; 3
+ 1ac:	90 e0       	ldi	r25, 0x00	; 0
+ 1ae:	6b df       	rcall	.-298    	; 0x86 <ShiftDigitalWrite>
 	   }
-	}
-	sei();
- 1b4:	78 94       	sei
- 1b6:	08 95       	ret
 
-000001b8 <set5V>:
+	}
+	strobLatch();
+ 1b0:	52 df       	rcall	.-348    	; 0x56 <strobLatch>
+	sei();
+ 1b2:	78 94       	sei
+ 1b4:	08 95       	ret
+
+000001b6 <set5V>:
 }
 
 void set5V(){
 	pinSetMode(D_MINUS, V_ZERO);
- 1b8:	63 e0       	ldi	r22, 0x03	; 3
- 1ba:	81 e0       	ldi	r24, 0x01	; 1
- 1bc:	90 df       	rcall	.-224    	; 0xde <pinSetMode>
+ 1b6:	63 e0       	ldi	r22, 0x03	; 3
+ 1b8:	81 e0       	ldi	r24, 0x01	; 1
+ 1ba:	8f df       	rcall	.-226    	; 0xda <pinSetMode>
 	pinSetMode(D_PLUS, V_ZERO_SIX);
- 1be:	62 e0       	ldi	r22, 0x02	; 2
- 1c0:	80 e0       	ldi	r24, 0x00	; 0
- 1c2:	8d df       	rcall	.-230    	; 0xde <pinSetMode>
- 1c4:	08 95       	ret
+ 1bc:	62 e0       	ldi	r22, 0x02	; 2
+ 1be:	80 e0       	ldi	r24, 0x00	; 0
+ 1c0:	8c df       	rcall	.-232    	; 0xda <pinSetMode>
+ 1c2:	08 95       	ret
 
-000001c6 <set9V>:
+000001c4 <set9V>:
 }
 void set9V(){
 	pinSetMode(D_MINUS, V_ZERO_SIX);
- 1c6:	62 e0       	ldi	r22, 0x02	; 2
- 1c8:	81 e0       	ldi	r24, 0x01	; 1
- 1ca:	89 df       	rcall	.-238    	; 0xde <pinSetMode>
+ 1c4:	62 e0       	ldi	r22, 0x02	; 2
+ 1c6:	81 e0       	ldi	r24, 0x01	; 1
+ 1c8:	88 df       	rcall	.-240    	; 0xda <pinSetMode>
 	pinSetMode(D_PLUS, V_THREE);
- 1cc:	61 e0       	ldi	r22, 0x01	; 1
- 1ce:	80 e0       	ldi	r24, 0x00	; 0
- 1d0:	86 df       	rcall	.-244    	; 0xde <pinSetMode>
- 1d2:	08 95       	ret
+ 1ca:	61 e0       	ldi	r22, 0x01	; 1
+ 1cc:	80 e0       	ldi	r24, 0x00	; 0
+ 1ce:	85 df       	rcall	.-246    	; 0xda <pinSetMode>
+ 1d0:	08 95       	ret
 
-000001d4 <set12V>:
+000001d2 <set12V>:
 }
 
 void set12V(){
 	pinSetMode(D_MINUS, V_ZERO_SIX);
- 1d4:	62 e0       	ldi	r22, 0x02	; 2
- 1d6:	81 e0       	ldi	r24, 0x01	; 1
- 1d8:	82 df       	rcall	.-252    	; 0xde <pinSetMode>
+ 1d2:	62 e0       	ldi	r22, 0x02	; 2
+ 1d4:	81 e0       	ldi	r24, 0x01	; 1
+ 1d6:	81 df       	rcall	.-254    	; 0xda <pinSetMode>
 	pinSetMode(D_PLUS, V_ZERO_SIX);
- 1da:	62 e0       	ldi	r22, 0x02	; 2
- 1dc:	80 e0       	ldi	r24, 0x00	; 0
- 1de:	7f df       	rcall	.-258    	; 0xde <pinSetMode>
- 1e0:	08 95       	ret
+ 1d8:	62 e0       	ldi	r22, 0x02	; 2
+ 1da:	80 e0       	ldi	r24, 0x00	; 0
+ 1dc:	7e df       	rcall	.-260    	; 0xda <pinSetMode>
+ 1de:	08 95       	ret
 
-000001e2 <set20V>:
+000001e0 <set20V>:
 }
 
 void set20V(){
 	pinSetMode(D_MINUS, V_THREE);
- 1e2:	61 e0       	ldi	r22, 0x01	; 1
- 1e4:	81 e0       	ldi	r24, 0x01	; 1
- 1e6:	7b df       	rcall	.-266    	; 0xde <pinSetMode>
+ 1e0:	61 e0       	ldi	r22, 0x01	; 1
+ 1e2:	81 e0       	ldi	r24, 0x01	; 1
+ 1e4:	7a df       	rcall	.-268    	; 0xda <pinSetMode>
 	pinSetMode(D_PLUS, V_THREE);
- 1e8:	61 e0       	ldi	r22, 0x01	; 1
- 1ea:	80 e0       	ldi	r24, 0x00	; 0
- 1ec:	78 df       	rcall	.-272    	; 0xde <pinSetMode>
- 1ee:	08 95       	ret
+ 1e6:	61 e0       	ldi	r22, 0x01	; 1
+ 1e8:	80 e0       	ldi	r24, 0x00	; 0
+ 1ea:	77 df       	rcall	.-274    	; 0xda <pinSetMode>
+ 1ec:	08 95       	ret
 
-000001f0 <__vector_3>:
+000001ee <__vector_3>:
 }
 
 ISR(TIM0_OVF_vect) {
- 1f0:	1f 92       	push	r1
- 1f2:	0f 92       	push	r0
- 1f4:	0f b6       	in	r0, 0x3f	; 63
- 1f6:	0f 92       	push	r0
- 1f8:	11 24       	eor	r1, r1
- 1fa:	2f 93       	push	r18
- 1fc:	3f 93       	push	r19
- 1fe:	4f 93       	push	r20
- 200:	5f 93       	push	r21
- 202:	6f 93       	push	r22
- 204:	7f 93       	push	r23
- 206:	8f 93       	push	r24
- 208:	9f 93       	push	r25
- 20a:	af 93       	push	r26
- 20c:	bf 93       	push	r27
- 20e:	cf 93       	push	r28
- 210:	df 93       	push	r29
- 212:	ef 93       	push	r30
- 214:	ff 93       	push	r31
+ 1ee:	1f 92       	push	r1
+ 1f0:	0f 92       	push	r0
+ 1f2:	0f b6       	in	r0, 0x3f	; 63
+ 1f4:	0f 92       	push	r0
+ 1f6:	11 24       	eor	r1, r1
+ 1f8:	2f 93       	push	r18
+ 1fa:	3f 93       	push	r19
+ 1fc:	4f 93       	push	r20
+ 1fe:	5f 93       	push	r21
+ 200:	6f 93       	push	r22
+ 202:	7f 93       	push	r23
+ 204:	8f 93       	push	r24
+ 206:	9f 93       	push	r25
+ 208:	af 93       	push	r26
+ 20a:	bf 93       	push	r27
+ 20c:	cf 93       	push	r28
+ 20e:	df 93       	push	r29
+ 210:	ef 93       	push	r30
+ 212:	ff 93       	push	r31
 	ShiftDigitalWrite(4, LOW, 1);
- 216:	41 e0       	ldi	r20, 0x01	; 1
- 218:	50 e0       	ldi	r21, 0x00	; 0
- 21a:	60 e0       	ldi	r22, 0x00	; 0
- 21c:	70 e0       	ldi	r23, 0x00	; 0
- 21e:	84 e0       	ldi	r24, 0x04	; 4
- 220:	90 e0       	ldi	r25, 0x00	; 0
- 222:	33 df       	rcall	.-410    	; 0x8a <ShiftDigitalWrite>
+ 214:	41 e0       	ldi	r20, 0x01	; 1
+ 216:	50 e0       	ldi	r21, 0x00	; 0
+ 218:	60 e0       	ldi	r22, 0x00	; 0
+ 21a:	70 e0       	ldi	r23, 0x00	; 0
+ 21c:	84 e0       	ldi	r24, 0x04	; 4
+ 21e:	90 e0       	ldi	r25, 0x00	; 0
+ 220:	32 df       	rcall	.-412    	; 0x86 <ShiftDigitalWrite>
 	ShiftDigitalWritePort(~numbers[number/10], 0);
- 224:	80 91 6c 00 	lds	r24, 0x006C
- 228:	90 91 6d 00 	lds	r25, 0x006D
- 22c:	ca e0       	ldi	r28, 0x0A	; 10
- 22e:	d0 e0       	ldi	r29, 0x00	; 0
- 230:	be 01       	movw	r22, r28
- 232:	b0 d0       	rcall	.+352    	; 0x394 <__udivmodhi4>
- 234:	fb 01       	movw	r30, r22
- 236:	e0 5a       	subi	r30, 0xA0	; 160
- 238:	ff 4f       	sbci	r31, 0xFF	; 255
- 23a:	80 81       	ld	r24, Z
- 23c:	90 e0       	ldi	r25, 0x00	; 0
- 23e:	60 e0       	ldi	r22, 0x00	; 0
- 240:	70 e0       	ldi	r23, 0x00	; 0
- 242:	80 95       	com	r24
- 244:	90 95       	com	r25
- 246:	45 df       	rcall	.-374    	; 0xd2 <ShiftDigitalWritePort>
+ 222:	80 91 6c 00 	lds	r24, 0x006C	; 0x80006c <number>
+ 226:	90 91 6d 00 	lds	r25, 0x006D	; 0x80006d <number+0x1>
+ 22a:	ca e0       	ldi	r28, 0x0A	; 10
+ 22c:	d0 e0       	ldi	r29, 0x00	; 0
+ 22e:	be 01       	movw	r22, r28
+ 230:	b2 d0       	rcall	.+356    	; 0x396 <__udivmodhi4>
+ 232:	fb 01       	movw	r30, r22
+ 234:	e0 5a       	subi	r30, 0xA0	; 160
+ 236:	ff 4f       	sbci	r31, 0xFF	; 255
+ 238:	80 81       	ld	r24, Z
+ 23a:	90 e0       	ldi	r25, 0x00	; 0
+ 23c:	60 e0       	ldi	r22, 0x00	; 0
+ 23e:	70 e0       	ldi	r23, 0x00	; 0
+ 240:	80 95       	com	r24
+ 242:	90 95       	com	r25
+ 244:	44 df       	rcall	.-376    	; 0xce <ShiftDigitalWritePort>
 	ShiftDigitalWrite(5, HIGH, 1);
- 248:	41 e0       	ldi	r20, 0x01	; 1
- 24a:	50 e0       	ldi	r21, 0x00	; 0
- 24c:	61 e0       	ldi	r22, 0x01	; 1
- 24e:	70 e0       	ldi	r23, 0x00	; 0
- 250:	85 e0       	ldi	r24, 0x05	; 5
- 252:	90 e0       	ldi	r25, 0x00	; 0
- 254:	1a df       	rcall	.-460    	; 0x8a <ShiftDigitalWrite>
+ 246:	41 e0       	ldi	r20, 0x01	; 1
+ 248:	50 e0       	ldi	r21, 0x00	; 0
+ 24a:	61 e0       	ldi	r22, 0x01	; 1
+ 24c:	70 e0       	ldi	r23, 0x00	; 0
+ 24e:	85 e0       	ldi	r24, 0x05	; 5
+ 250:	90 e0       	ldi	r25, 0x00	; 0
+ 252:	19 df       	rcall	.-462    	; 0x86 <ShiftDigitalWrite>
+	strobLatch();
+ 254:	00 df       	rcall	.-512    	; 0x56 <strobLatch>
 	
 	ShiftDigitalWrite(5, LOW, 1);
  256:	41 e0       	ldi	r20, 0x01	; 1
@@ -485,12 +506,12 @@ ISR(TIM0_OVF_vect) {
  25c:	70 e0       	ldi	r23, 0x00	; 0
  25e:	85 e0       	ldi	r24, 0x05	; 5
  260:	90 e0       	ldi	r25, 0x00	; 0
- 262:	13 df       	rcall	.-474    	; 0x8a <ShiftDigitalWrite>
+ 262:	11 df       	rcall	.-478    	; 0x86 <ShiftDigitalWrite>
 	ShiftDigitalWritePort(~numbers[number%10], 0);
- 264:	80 91 6c 00 	lds	r24, 0x006C
- 268:	90 91 6d 00 	lds	r25, 0x006D
+ 264:	80 91 6c 00 	lds	r24, 0x006C	; 0x80006c <number>
+ 268:	90 91 6d 00 	lds	r25, 0x006D	; 0x80006d <number+0x1>
  26c:	be 01       	movw	r22, r28
- 26e:	92 d0       	rcall	.+292    	; 0x394 <__udivmodhi4>
+ 26e:	93 d0       	rcall	.+294    	; 0x396 <__udivmodhi4>
  270:	fc 01       	movw	r30, r24
  272:	e0 5a       	subi	r30, 0xA0	; 160
  274:	ff 4f       	sbci	r31, 0xFF	; 255
@@ -500,7 +521,7 @@ ISR(TIM0_OVF_vect) {
  27c:	70 e0       	ldi	r23, 0x00	; 0
  27e:	80 95       	com	r24
  280:	90 95       	com	r25
- 282:	27 df       	rcall	.-434    	; 0xd2 <ShiftDigitalWritePort>
+ 282:	25 df       	rcall	.-438    	; 0xce <ShiftDigitalWritePort>
 	ShiftDigitalWrite(4, HIGH, 1);
  284:	41 e0       	ldi	r20, 0x01	; 1
  286:	50 e0       	ldi	r21, 0x00	; 0
@@ -508,224 +529,225 @@ ISR(TIM0_OVF_vect) {
  28a:	70 e0       	ldi	r23, 0x00	; 0
  28c:	84 e0       	ldi	r24, 0x04	; 4
  28e:	90 e0       	ldi	r25, 0x00	; 0
- 290:	fc de       	rcall	.-520    	; 0x8a <ShiftDigitalWrite>
-	
+ 290:	fa de       	rcall	.-524    	; 0x86 <ShiftDigitalWrite>
+	strobLatch();
+ 292:	e1 de       	rcall	.-574    	; 0x56 <strobLatch>
 }
- 292:	ff 91       	pop	r31
- 294:	ef 91       	pop	r30
- 296:	df 91       	pop	r29
- 298:	cf 91       	pop	r28
- 29a:	bf 91       	pop	r27
- 29c:	af 91       	pop	r26
- 29e:	9f 91       	pop	r25
- 2a0:	8f 91       	pop	r24
- 2a2:	7f 91       	pop	r23
- 2a4:	6f 91       	pop	r22
- 2a6:	5f 91       	pop	r21
- 2a8:	4f 91       	pop	r20
- 2aa:	3f 91       	pop	r19
- 2ac:	2f 91       	pop	r18
- 2ae:	0f 90       	pop	r0
- 2b0:	0f be       	out	0x3f, r0	; 63
- 2b2:	0f 90       	pop	r0
- 2b4:	1f 90       	pop	r1
- 2b6:	18 95       	reti
+ 294:	ff 91       	pop	r31
+ 296:	ef 91       	pop	r30
+ 298:	df 91       	pop	r29
+ 29a:	cf 91       	pop	r28
+ 29c:	bf 91       	pop	r27
+ 29e:	af 91       	pop	r26
+ 2a0:	9f 91       	pop	r25
+ 2a2:	8f 91       	pop	r24
+ 2a4:	7f 91       	pop	r23
+ 2a6:	6f 91       	pop	r22
+ 2a8:	5f 91       	pop	r21
+ 2aa:	4f 91       	pop	r20
+ 2ac:	3f 91       	pop	r19
+ 2ae:	2f 91       	pop	r18
+ 2b0:	0f 90       	pop	r0
+ 2b2:	0f be       	out	0x3f, r0	; 63
+ 2b4:	0f 90       	pop	r0
+ 2b6:	1f 90       	pop	r1
+ 2b8:	18 95       	reti
 
-000002b8 <main>:
+000002ba <main>:
 
 int main(void)
 {
 	ShiftRegisterInit();
- 2b8:	c7 de       	rcall	.-626    	; 0x48 <ShiftRegisterInit>
+ 2ba:	c6 de       	rcall	.-628    	; 0x48 <ShiftRegisterInit>
 	
 	TCCR0B = (1<<CS00) | (1<<CS01);
- 2ba:	83 e0       	ldi	r24, 0x03	; 3
- 2bc:	83 bf       	out	0x33, r24	; 51
+ 2bc:	83 e0       	ldi	r24, 0x03	; 3
+ 2be:	83 bf       	out	0x33, r24	; 51
 	TIMSK0 = (1<<TOIE0); 
- 2be:	82 e0       	ldi	r24, 0x02	; 2
- 2c0:	89 bf       	out	0x39, r24	; 57
+ 2c0:	82 e0       	ldi	r24, 0x02	; 2
+ 2c2:	89 bf       	out	0x39, r24	; 57
 	TCNT0 = 0x00;
- 2c2:	12 be       	out	0x32, r1	; 50
+ 2c4:	12 be       	out	0x32, r1	; 50
     DDRB &= ~_BV(PB3); 
- 2c4:	bb 98       	cbi	0x17, 3	; 23
+ 2c6:	bb 98       	cbi	0x17, 3	; 23
 	PORTB |= _BV(PB3); 
- 2c6:	c3 9a       	sbi	0x18, 3	; 24
+ 2c8:	c3 9a       	sbi	0x18, 3	; 24
 	number = 5;
- 2c8:	85 e0       	ldi	r24, 0x05	; 5
- 2ca:	90 e0       	ldi	r25, 0x00	; 0
- 2cc:	90 93 6d 00 	sts	0x006D, r25
- 2d0:	80 93 6c 00 	sts	0x006C, r24
+ 2ca:	85 e0       	ldi	r24, 0x05	; 5
+ 2cc:	90 e0       	ldi	r25, 0x00	; 0
+ 2ce:	90 93 6d 00 	sts	0x006D, r25	; 0x80006d <number+0x1>
+ 2d2:	80 93 6c 00 	sts	0x006C, r24	; 0x80006c <number>
 	set5V();
- 2d4:	71 df       	rcall	.-286    	; 0x1b8 <set5V>
+ 2d6:	6f df       	rcall	.-290    	; 0x1b6 <set5V>
 	#else
 		//round up by default
 		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
 	#endif
 
 	__builtin_avr_delay_cycles(__ticks_dc);
- 2d6:	2f ef       	ldi	r18, 0xFF	; 255
- 2d8:	83 ee       	ldi	r24, 0xE3	; 227
- 2da:	97 e5       	ldi	r25, 0x57	; 87
- 2dc:	21 50       	subi	r18, 0x01	; 1
- 2de:	80 40       	sbci	r24, 0x00	; 0
- 2e0:	90 40       	sbci	r25, 0x00	; 0
- 2e2:	e1 f7       	brne	.-8      	; 0x2dc <main+0x24>
- 2e4:	00 c0       	rjmp	.+0      	; 0x2e6 <main+0x2e>
- 2e6:	00 00       	nop
+ 2d8:	2f ef       	ldi	r18, 0xFF	; 255
+ 2da:	83 ee       	ldi	r24, 0xE3	; 227
+ 2dc:	97 e5       	ldi	r25, 0x57	; 87
+ 2de:	21 50       	subi	r18, 0x01	; 1
+ 2e0:	80 40       	sbci	r24, 0x00	; 0
+ 2e2:	90 40       	sbci	r25, 0x00	; 0
+ 2e4:	e1 f7       	brne	.-8      	; 0x2de <main+0x24>
+ 2e6:	00 c0       	rjmp	.+0      	; 0x2e8 <main+0x2e>
+ 2e8:	00 00       	nop
 	_delay_ms(3000);
 	sei();
- 2e8:	78 94       	sei
+ 2ea:	78 94       	sei
 				if(voltage  == 4){ voltage = 0;}
 				while ((PINB & _BV(PB3)) == 0){}
 		   }
 		   if(voltage == 0){
 			   set5V();
 			   number = 5;
- 2ea:	c5 e0       	ldi	r28, 0x05	; 5
- 2ec:	d0 e0       	ldi	r29, 0x00	; 0
+ 2ec:	c5 e0       	ldi	r28, 0x05	; 5
+ 2ee:	d0 e0       	ldi	r29, 0x00	; 0
 		   }
 		   if(voltage == 1){
 			   set9V();
 			   number = 9;
- 2ee:	0f 2e       	mov	r0, r31
- 2f0:	f9 e0       	ldi	r31, 0x09	; 9
- 2f2:	cf 2e       	mov	r12, r31
- 2f4:	d1 2c       	mov	r13, r1
- 2f6:	f0 2d       	mov	r31, r0
+ 2f0:	0f 2e       	mov	r0, r31
+ 2f2:	f9 e0       	ldi	r31, 0x09	; 9
+ 2f4:	cf 2e       	mov	r12, r31
+ 2f6:	d1 2c       	mov	r13, r1
+ 2f8:	f0 2d       	mov	r31, r0
 		   }
 		   if(voltage == 2){
 			   set12V();
 			   number = 12;
- 2f8:	0f 2e       	mov	r0, r31
- 2fa:	fc e0       	ldi	r31, 0x0C	; 12
- 2fc:	ef 2e       	mov	r14, r31
- 2fe:	f1 2c       	mov	r15, r1
- 300:	f0 2d       	mov	r31, r0
+ 2fa:	0f 2e       	mov	r0, r31
+ 2fc:	fc e0       	ldi	r31, 0x0C	; 12
+ 2fe:	ef 2e       	mov	r14, r31
+ 300:	f1 2c       	mov	r15, r1
+ 302:	f0 2d       	mov	r31, r0
 		   }
 		   if(voltage == 3){
 			   set20V();
 			   number = 20;
- 302:	04 e1       	ldi	r16, 0x14	; 20
- 304:	10 e0       	ldi	r17, 0x00	; 0
+ 304:	04 e1       	ldi	r16, 0x14	; 20
+ 306:	10 e0       	ldi	r17, 0x00	; 0
 	_delay_ms(3000);
 	sei();
     while(1)
     {
 		
 	   if((PINB & _BV(PB3)) == 0){
- 306:	b3 99       	sbic	0x16, 3	; 22
- 308:	fe cf       	rjmp	.-4      	; 0x306 <main+0x4e>
- 30a:	2f ef       	ldi	r18, 0xFF	; 255
- 30c:	86 e7       	ldi	r24, 0x76	; 118
- 30e:	91 e0       	ldi	r25, 0x01	; 1
- 310:	21 50       	subi	r18, 0x01	; 1
- 312:	80 40       	sbci	r24, 0x00	; 0
- 314:	90 40       	sbci	r25, 0x00	; 0
- 316:	e1 f7       	brne	.-8      	; 0x310 <main+0x58>
- 318:	00 c0       	rjmp	.+0      	; 0x31a <main+0x62>
- 31a:	00 00       	nop
+ 308:	b3 99       	sbic	0x16, 3	; 22
+ 30a:	fe cf       	rjmp	.-4      	; 0x308 <main+0x4e>
+ 30c:	2f ef       	ldi	r18, 0xFF	; 255
+ 30e:	86 e7       	ldi	r24, 0x76	; 118
+ 310:	91 e0       	ldi	r25, 0x01	; 1
+ 312:	21 50       	subi	r18, 0x01	; 1
+ 314:	80 40       	sbci	r24, 0x00	; 0
+ 316:	90 40       	sbci	r25, 0x00	; 0
+ 318:	e1 f7       	brne	.-8      	; 0x312 <main+0x58>
+ 31a:	00 c0       	rjmp	.+0      	; 0x31c <main+0x62>
+ 31c:	00 00       	nop
 		   _delay_ms(50);         // Устранение дребезга клавиш
 		   if((PINB & _BV(PB3)) == 0){
- 31c:	b3 99       	sbic	0x16, 3	; 22
- 31e:	0c c0       	rjmp	.+24     	; 0x338 <main+0x80>
+ 31e:	b3 99       	sbic	0x16, 3	; 22
+ 320:	0c c0       	rjmp	.+24     	; 0x33a <main+0x80>
 				voltage++;
- 320:	80 91 6e 00 	lds	r24, 0x006E
- 324:	8f 5f       	subi	r24, 0xFF	; 255
+ 322:	80 91 6e 00 	lds	r24, 0x006E	; 0x80006e <voltage>
+ 326:	8f 5f       	subi	r24, 0xFF	; 255
 				if(voltage  == 4){ voltage = 0;}
- 326:	84 30       	cpi	r24, 0x04	; 4
- 328:	19 f0       	breq	.+6      	; 0x330 <main+0x78>
+ 328:	84 30       	cpi	r24, 0x04	; 4
+ 32a:	19 f0       	breq	.+6      	; 0x332 <main+0x78>
     {
 		
 	   if((PINB & _BV(PB3)) == 0){
 		   _delay_ms(50);         // Устранение дребезга клавиш
 		   if((PINB & _BV(PB3)) == 0){
 				voltage++;
- 32a:	80 93 6e 00 	sts	0x006E, r24
- 32e:	02 c0       	rjmp	.+4      	; 0x334 <main+0x7c>
+ 32c:	80 93 6e 00 	sts	0x006E, r24	; 0x80006e <voltage>
+ 330:	02 c0       	rjmp	.+4      	; 0x336 <main+0x7c>
 				if(voltage  == 4){ voltage = 0;}
- 330:	10 92 6e 00 	sts	0x006E, r1
+ 332:	10 92 6e 00 	sts	0x006E, r1	; 0x80006e <voltage>
 				while ((PINB & _BV(PB3)) == 0){}
- 334:	b3 9b       	sbis	0x16, 3	; 22
- 336:	fe cf       	rjmp	.-4      	; 0x334 <main+0x7c>
+ 336:	b3 9b       	sbis	0x16, 3	; 22
+ 338:	fe cf       	rjmp	.-4      	; 0x336 <main+0x7c>
 		   }
 		   if(voltage == 0){
- 338:	80 91 6e 00 	lds	r24, 0x006E
- 33c:	81 11       	cpse	r24, r1
- 33e:	05 c0       	rjmp	.+10     	; 0x34a <main+0x92>
+ 33a:	80 91 6e 00 	lds	r24, 0x006E	; 0x80006e <voltage>
+ 33e:	81 11       	cpse	r24, r1
+ 340:	05 c0       	rjmp	.+10     	; 0x34c <main+0x92>
 			   set5V();
- 340:	3b df       	rcall	.-394    	; 0x1b8 <set5V>
+ 342:	39 df       	rcall	.-398    	; 0x1b6 <set5V>
 			   number = 5;
- 342:	d0 93 6d 00 	sts	0x006D, r29
- 346:	c0 93 6c 00 	sts	0x006C, r28
+ 344:	d0 93 6d 00 	sts	0x006D, r29	; 0x80006d <number+0x1>
+ 348:	c0 93 6c 00 	sts	0x006C, r28	; 0x80006c <number>
 		   }
 		   if(voltage == 1){
- 34a:	80 91 6e 00 	lds	r24, 0x006E
- 34e:	81 30       	cpi	r24, 0x01	; 1
- 350:	29 f4       	brne	.+10     	; 0x35c <main+0xa4>
+ 34c:	80 91 6e 00 	lds	r24, 0x006E	; 0x80006e <voltage>
+ 350:	81 30       	cpi	r24, 0x01	; 1
+ 352:	29 f4       	brne	.+10     	; 0x35e <main+0xa4>
 			   set9V();
- 352:	39 df       	rcall	.-398    	; 0x1c6 <set9V>
+ 354:	37 df       	rcall	.-402    	; 0x1c4 <set9V>
 			   number = 9;
- 354:	d0 92 6d 00 	sts	0x006D, r13
- 358:	c0 92 6c 00 	sts	0x006C, r12
+ 356:	d0 92 6d 00 	sts	0x006D, r13	; 0x80006d <number+0x1>
+ 35a:	c0 92 6c 00 	sts	0x006C, r12	; 0x80006c <number>
 		   }
 		   if(voltage == 2){
- 35c:	80 91 6e 00 	lds	r24, 0x006E
- 360:	82 30       	cpi	r24, 0x02	; 2
- 362:	29 f4       	brne	.+10     	; 0x36e <main+0xb6>
+ 35e:	80 91 6e 00 	lds	r24, 0x006E	; 0x80006e <voltage>
+ 362:	82 30       	cpi	r24, 0x02	; 2
+ 364:	29 f4       	brne	.+10     	; 0x370 <main+0xb6>
 			   set12V();
- 364:	37 df       	rcall	.-402    	; 0x1d4 <set12V>
+ 366:	35 df       	rcall	.-406    	; 0x1d2 <set12V>
 			   number = 12;
- 366:	f0 92 6d 00 	sts	0x006D, r15
- 36a:	e0 92 6c 00 	sts	0x006C, r14
+ 368:	f0 92 6d 00 	sts	0x006D, r15	; 0x80006d <number+0x1>
+ 36c:	e0 92 6c 00 	sts	0x006C, r14	; 0x80006c <number>
 		   }
 		   if(voltage == 3){
- 36e:	80 91 6e 00 	lds	r24, 0x006E
- 372:	83 30       	cpi	r24, 0x03	; 3
- 374:	29 f4       	brne	.+10     	; 0x380 <main+0xc8>
+ 370:	80 91 6e 00 	lds	r24, 0x006E	; 0x80006e <voltage>
+ 374:	83 30       	cpi	r24, 0x03	; 3
+ 376:	29 f4       	brne	.+10     	; 0x382 <main+0xc8>
 			   set20V();
- 376:	35 df       	rcall	.-406    	; 0x1e2 <set20V>
+ 378:	33 df       	rcall	.-410    	; 0x1e0 <set20V>
 			   number = 20;
- 378:	10 93 6d 00 	sts	0x006D, r17
- 37c:	00 93 6c 00 	sts	0x006C, r16
- 380:	2f ef       	ldi	r18, 0xFF	; 255
- 382:	85 ea       	ldi	r24, 0xA5	; 165
- 384:	9e e0       	ldi	r25, 0x0E	; 14
- 386:	21 50       	subi	r18, 0x01	; 1
- 388:	80 40       	sbci	r24, 0x00	; 0
- 38a:	90 40       	sbci	r25, 0x00	; 0
- 38c:	e1 f7       	brne	.-8      	; 0x386 <main+0xce>
- 38e:	00 c0       	rjmp	.+0      	; 0x390 <main+0xd8>
- 390:	00 00       	nop
- 392:	b9 cf       	rjmp	.-142    	; 0x306 <main+0x4e>
+ 37a:	10 93 6d 00 	sts	0x006D, r17	; 0x80006d <number+0x1>
+ 37e:	00 93 6c 00 	sts	0x006C, r16	; 0x80006c <number>
+ 382:	2f ef       	ldi	r18, 0xFF	; 255
+ 384:	85 ea       	ldi	r24, 0xA5	; 165
+ 386:	9e e0       	ldi	r25, 0x0E	; 14
+ 388:	21 50       	subi	r18, 0x01	; 1
+ 38a:	80 40       	sbci	r24, 0x00	; 0
+ 38c:	90 40       	sbci	r25, 0x00	; 0
+ 38e:	e1 f7       	brne	.-8      	; 0x388 <main+0xce>
+ 390:	00 c0       	rjmp	.+0      	; 0x392 <main+0xd8>
+ 392:	00 00       	nop
+ 394:	b9 cf       	rjmp	.-142    	; 0x308 <main+0x4e>
 
-00000394 <__udivmodhi4>:
- 394:	aa 1b       	sub	r26, r26
- 396:	bb 1b       	sub	r27, r27
- 398:	51 e1       	ldi	r21, 0x11	; 17
- 39a:	07 c0       	rjmp	.+14     	; 0x3aa <__udivmodhi4_ep>
+00000396 <__udivmodhi4>:
+ 396:	aa 1b       	sub	r26, r26
+ 398:	bb 1b       	sub	r27, r27
+ 39a:	51 e1       	ldi	r21, 0x11	; 17
+ 39c:	07 c0       	rjmp	.+14     	; 0x3ac <__udivmodhi4_ep>
 
-0000039c <__udivmodhi4_loop>:
- 39c:	aa 1f       	adc	r26, r26
- 39e:	bb 1f       	adc	r27, r27
- 3a0:	a6 17       	cp	r26, r22
- 3a2:	b7 07       	cpc	r27, r23
- 3a4:	10 f0       	brcs	.+4      	; 0x3aa <__udivmodhi4_ep>
- 3a6:	a6 1b       	sub	r26, r22
- 3a8:	b7 0b       	sbc	r27, r23
+0000039e <__udivmodhi4_loop>:
+ 39e:	aa 1f       	adc	r26, r26
+ 3a0:	bb 1f       	adc	r27, r27
+ 3a2:	a6 17       	cp	r26, r22
+ 3a4:	b7 07       	cpc	r27, r23
+ 3a6:	10 f0       	brcs	.+4      	; 0x3ac <__udivmodhi4_ep>
+ 3a8:	a6 1b       	sub	r26, r22
+ 3aa:	b7 0b       	sbc	r27, r23
 
-000003aa <__udivmodhi4_ep>:
- 3aa:	88 1f       	adc	r24, r24
- 3ac:	99 1f       	adc	r25, r25
- 3ae:	5a 95       	dec	r21
- 3b0:	a9 f7       	brne	.-22     	; 0x39c <__udivmodhi4_loop>
- 3b2:	80 95       	com	r24
- 3b4:	90 95       	com	r25
- 3b6:	bc 01       	movw	r22, r24
- 3b8:	cd 01       	movw	r24, r26
- 3ba:	08 95       	ret
+000003ac <__udivmodhi4_ep>:
+ 3ac:	88 1f       	adc	r24, r24
+ 3ae:	99 1f       	adc	r25, r25
+ 3b0:	5a 95       	dec	r21
+ 3b2:	a9 f7       	brne	.-22     	; 0x39e <__udivmodhi4_loop>
+ 3b4:	80 95       	com	r24
+ 3b6:	90 95       	com	r25
+ 3b8:	bc 01       	movw	r22, r24
+ 3ba:	cd 01       	movw	r24, r26
+ 3bc:	08 95       	ret
 
-000003bc <_exit>:
- 3bc:	f8 94       	cli
+000003be <_exit>:
+ 3be:	f8 94       	cli
 
-000003be <__stop_program>:
- 3be:	ff cf       	rjmp	.-2      	; 0x3be <__stop_program>
+000003c0 <__stop_program>:
+ 3c0:	ff cf       	rjmp	.-2      	; 0x3c0 <__stop_program>

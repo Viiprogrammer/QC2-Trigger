@@ -49,6 +49,7 @@ void pinSetMode(unsigned char pin, unsigned char mode){
 	       ShiftDigitalWrite(0, LOW, 1);
 	       ShiftDigitalWrite(1, HIGH, 1);
        }
+	   
 	}else if(pin == D_MINUS){
 	   if(mode == V_THREE){
 		   ShiftDigitalWrite(2, HIGH, 1);
@@ -60,7 +61,9 @@ void pinSetMode(unsigned char pin, unsigned char mode){
 		   ShiftDigitalWrite(2, LOW, 1);
 		   ShiftDigitalWrite(3, HIGH, 1);
 	   }
+
 	}
+	strobLatch();
 	sei();
 }
 
@@ -87,11 +90,12 @@ ISR(TIM0_OVF_vect) {
 	ShiftDigitalWrite(4, LOW, 1);
 	ShiftDigitalWritePort(~numbers[number/10], 0);
 	ShiftDigitalWrite(5, HIGH, 1);
+	strobLatch();
 	
 	ShiftDigitalWrite(5, LOW, 1);
 	ShiftDigitalWritePort(~numbers[number%10], 0);
 	ShiftDigitalWrite(4, HIGH, 1);
-	
+	strobLatch();
 }
 
 int main(void)

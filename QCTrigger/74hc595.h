@@ -1,23 +1,36 @@
-#include <avr/io.h>
 #ifndef SHIFTREG_H
 #define SHIFTREG_H
- void ShiftRegisterInit(void);
+ void ShiftRegisterInit();
  void ShiftRegisterSend(void);
  void ShiftDigitalWrite(int pin, int lvl, int number);
  void ShiftDigitalWritePort(int port, int number);
  char ShiftDigitalGetPort(int number);
- //#define USE_HARDWARE_SPI
+ void strobLatch();
+ /*
+   USE_HARDWARE_SPI 1 - Hardware SPI
+   USE_HARDWARE_SPI 0 - Soft SPI
+ */
+ #define USE_HARDWARE_SPI 0 
  
- #define DATA 1
- #define SCK 0
- #define LATCH 2
+ #define DATA 1 //DS Pin
+ #define SCK 0 //SH_CP (SLK) Pin
+ #define LATCH 2 //ST_CP (LATCH) Pin
 
- #define DATA_DDR DDRB
- #define SCK_DDR DDRB
- #define LATCH_DDR DDRB
+ #define DATA_DDR DDRB //DS DDR
+ #define SCK_DDR DDRB //SH_CP (SLK) DDR
+ #define LATCH_DDR DDRB //ST_CP (LATCH) DDR
 
- #define DATA_PORT PORTB
- #define SCK_PORT PORTB
- #define LATCH_PORT PORTB
+ #define DATA_PORT PORTB //DS PORT
+ #define SCK_PORT PORTB //SH_CP (SLK) PORT
+ #define LATCH_PORT PORTB //ST_CP (LATCH) PORT
+ 
+
+ #define BYTE_ORDER 0
+ 
+ //Count of connected shift register
+ #define HC595_COUNT 2
+ 
+ #define HIGH 1
+ #define LOW 0
  
 #endif //SHIFTREG_H
